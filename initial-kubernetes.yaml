@@ -39,7 +39,7 @@
   hosts: k3s-main-master
   tasks:
     - copy:
-        src: ../manifests/
+        src: ../kubernetes-manifests-devops/
         dest: ~/
     - kubernetes.core.k8s:
         state: present

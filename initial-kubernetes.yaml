@@ -26,6 +26,9 @@
     - ansible.builtin.apt:
         name: python3-pip
         state: present
+    - ansible.builtin.apt:
+        name: curl
+        state: present
 # Install python packages for kubernetes
 - name: install pre-requisites pip
   hosts: k3s-main-master
@@ -38,22 +41,72 @@
 - name: Deploy basic manifests
   hosts: k3s-main-master
   tasks:
+    - ansible.builtin.file:
+        path: /tmp/ansible_files
+        state: directory
     - copy:
         src: ../kubernetes-manifests-devops/
-        dest: ~/
+        dest: /tmp/ansible_files/
     - kubernetes.core.k8s:
         state: present
         kubeconfig: /etc/rancher/k3s/k3s.yaml
-        src: ~/coredns.yaml
+        src: /tmp/ansible_files/coredns.yaml
     - kubernetes.core.k8s:
         state: present
         kubeconfig: /etc/rancher/k3s/k3s.yaml
-        src: ~/cloud-controller-manager.yaml
+        src: /tmp/ansible_files/cloud-controller-manager.yaml
     - kubernetes.core.k8s:
         state: present
         kubeconfig: /etc/rancher/k3s/k3s.yaml
-        src: ~/metrics-server-components.yaml
+        src: /tmp/ansible_files/metrics-server-components.yaml
     - kubernetes.core.k8s:
         state: present
         kubeconfig: /etc/rancher/k3s/k3s.yaml
-        src: ~/cluster-autoscaler.yaml
+        src: /tmp/ansible_files/cluster-autoscaler.yaml
+    - kubernetes.core.k8s:
+        state: present
+        kubeconfig: /etc/rancher/k3s/k3s.yaml
+        src: /tmp/ansible_files/traefik.yaml
+
+- name: Deploy traefik using helm
+  hosts: k3s-main-master
+  tasks:
+    - ansible.builtin.shell:
+        cmd: curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+    - kubernetes.core.helm_repository:
+        name: traefik
+        repo_url: "https://helm.traefik.io/traefik"
+    - kubernetes.core.helm:
+        name: traefik
+        chart_ref: traefik/traefik
+        kubeconfig: /etc/rancher/k3s/k3s.yaml
+        release_namespace: traefik
+        update_repo_cache: true
+        values_files:
+          - /tmp/ansible_files/traefik-values.yaml
+    - copy:
+        src: ../fullchain.pem
+        dest: /tmp/ansible_files/fullchain.pem
+    - copy:
+        src: ../privkey.pem
+        dest: /tmp/ansible_files/privkey.pem
+    - ansible.builtin.shell:
+        cmd: kubectl create secret generic traefik-cert --from-file=tls.crt=/tmp/ansible_files/fullchain.pem --from-file=tls.key=/tmp/ansible_files/privkey.pem -n traefik
+    - kubernetes.core.k8s:
+        state: present
+        kubeconfig: /etc/rancher/k3s/k3s.yaml
+        src: /tmp/ansible_files/traefik-dashboard.yaml
+
+- name: Deploy kubernetes dashboard
+  hosts: k3s-main-master
+  tasks:
+    - kubernetes.core.k8s:
+        state: present
+        kubeconfig: /etc/rancher/k3s/k3s.yaml
+        src: /tmp/ansible_files/kubernetes-dashboard.yaml
+    - ansible.builtin.shell:
+        cmd: kubectl -n kubernetes-dashboard create token admin-user >> /tmp/ansible_files/token
+    - ansible.builtin.fetch:
+        src: /tmp/ansible_files/token
+        dest: ./fetched/token
+        flat: yes

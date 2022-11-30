@@ -42,31 +42,31 @@
   hosts: k3s-main-master
   tasks:
     - ansible.builtin.file:
-        path: /tmp/ansible_files
+        path: /tmp/ansible_files/kubernetes-manifests-devops
         state: directory
     - copy:
         src: ../kubernetes-manifests-devops/
-        dest: /tmp/ansible_files/
+        dest: /tmp/ansible_files/kubernetes-manifests-devops/
     - kubernetes.core.k8s:
         state: present
         kubeconfig: /etc/rancher/k3s/k3s.yaml
-        src: /tmp/ansible_files/coredns.yaml
+        src: /tmp/ansible_files/kubernetes-manifests-devops/coredns.yaml
     - kubernetes.core.k8s:
         state: present
         kubeconfig: /etc/rancher/k3s/k3s.yaml
-        src: /tmp/ansible_files/cloud-controller-manager.yaml
+        src: /tmp/ansible_files/kubernetes-manifests-devops/cloud-controller-manager.yaml
     - kubernetes.core.k8s:
         state: present
         kubeconfig: /etc/rancher/k3s/k3s.yaml
-        src: /tmp/ansible_files/metrics-server-components.yaml
+        src: /tmp/ansible_files/kubernetes-manifests-devops/metrics-server-components.yaml
     - kubernetes.core.k8s:
         state: present
         kubeconfig: /etc/rancher/k3s/k3s.yaml
-        src: /tmp/ansible_files/cluster-autoscaler.yaml
+        src: /tmp/ansible_files/kubernetes-manifests-devops/cluster-autoscaler.yaml
     - kubernetes.core.k8s:
         state: present
         kubeconfig: /etc/rancher/k3s/k3s.yaml
-        src: /tmp/ansible_files/traefik.yaml
+        src: /tmp/ansible_files/kubernetes-manifests-devops/traefik.yaml
 
 - name: Deploy traefik using helm
   hosts: k3s-main-master
@@ -83,7 +83,7 @@
         release_namespace: traefik
         update_repo_cache: true
         values_files:
-          - /tmp/ansible_files/traefik-values.yaml
+          - /tmp/ansible_files/kubernetes-manifests-devops/traefik-values.yaml
     - copy:
         src: ../fullchain.pem
         dest: /tmp/ansible_files/fullchain.pem
@@ -95,7 +95,7 @@
     - kubernetes.core.k8s:
         state: present
         kubeconfig: /etc/rancher/k3s/k3s.yaml
-        src: /tmp/ansible_files/traefik-dashboard.yaml
+        src: /tmp/ansible_files/kubernetes-manifests-devops/traefik-dashboard.yaml
 
 - name: Deploy kubernetes dashboard
   hosts: k3s-main-master
@@ -103,10 +103,24 @@
     - kubernetes.core.k8s:
         state: present
         kubeconfig: /etc/rancher/k3s/k3s.yaml
-        src: /tmp/ansible_files/kubernetes-dashboard.yaml
+        src: /tmp/ansible_files/kubernetes-manifests-devops/kubernetes-dashboard.yaml
     - ansible.builtin.shell:
         cmd: kubectl -n kubernetes-dashboard create token admin-user >> /tmp/ansible_files/token
     - ansible.builtin.fetch:
         src: /tmp/ansible_files/token
         dest: ./fetched/token
         flat: yes
+
+- name: Deploy grafana dashboard
+  hosts: k3s-main-master
+  tasks:
+    - ansible.builtin.file:
+        path: /tmp/ansible_files/kubernetes-manifests-sre
+        state: directory
+    - copy:
+        src: ../kubernetes-manifests-sre/
+        dest: /tmp/ansible_files/kubernetes-manifests-sre/
+    - kubernetes.core.k8s:
+        state: present
+        kubeconfig: /etc/rancher/k3s/k3s.yaml
+        src: /tmp/ansible_files/kubernetes-manifests-sre/monitoring.yml

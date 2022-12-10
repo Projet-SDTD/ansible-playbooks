@@ -111,6 +111,30 @@
         dest: ./fetched/token
         flat: yes
 
+- name: Deploy longhorn
+  hosts: k3s-main-master
+  tasks:
+    - kubernetes.core.k8s:
+        state: present
+        kubeconfig: /etc/rancher/k3s/k3s.yaml
+        src: /tmp/ansible_files/kubernetes-manifests-devops/longhorn.yml
+    - kubernetes.core.k8s:
+        state: present
+        kubeconfig: /etc/rancher/k3s/k3s.yaml
+        src: /tmp/ansible_files/kubernetes-manifests-devops/longhorn-ingress.yml
+    - kubernetes.core.k8s:
+        state: present
+        kubeconfig: /etc/rancher/k3s/k3s.yaml
+        src: /tmp/ansible_files/kubernetes-manifests-devops/storageclass.yml
+
+- name: Deploy KEDA
+  hosts: k3s-main-master
+  tasks:
+    - kubernetes.core.k8s:
+        state: present
+        kubeconfig: /etc/rancher/k3s/k3s.yaml
+        src: /tmp/ansible_files/kubernetes-manifests-devops/keda-2.9.0.yaml
+
 - name: Deploy grafana dashboard
   hosts: k3s-main-master
   tasks:

@@ -148,3 +148,7 @@
         state: present
         kubeconfig: /etc/rancher/k3s/k3s.yaml
         src: /tmp/ansible_files/kubernetes-manifests-sre/monitoring.yml
+    - kubernetes.core.k8s:
+        state: present
+        kubeconfig: /etc/rancher/k3s/k3s.yaml
+        src: /tmp/ansible_files/kubernetes-manifests-sre/node-exporter.yml

@@ -7,6 +7,14 @@
         src: /etc/rancher/k3s/k3s.yaml
         dest: /tmp/kubeconfig
         remote_src: yes
+    - ansible.builtin.file:
+        path: /home/leo/.kube
+        state: directory
+        mode: '0755'
+    - ansible.builtin.copy:
+        src: /etc/rancher/k3s/k3s.yaml
+        dest: /home/leo/.kube/config
+        remote_src: yes
     - ansible.builtin.replace:
         path: /tmp/kubeconfig
         regexp: '127.0.0.1'
@@ -58,28 +66,19 @@
     - kubernetes.core.k8s:
         state: present
         kubeconfig: /etc/rancher/k3s/k3s.yaml
-        src: /tmp/ansible_files/kubernetes-manifests-devops/metrics-server-components.yaml
-    - kubernetes.core.k8s:
-        state: present
-        kubeconfig: /etc/rancher/k3s/k3s.yaml
-        src: /tmp/ansible_files/kubernetes-manifests-devops/cluster-autoscaler.yaml
-    - kubernetes.core.k8s:
-        state: present
-        kubeconfig: /etc/rancher/k3s/k3s.yaml
         src: /tmp/ansible_files/kubernetes-manifests-devops/traefik.yaml
+    - ansible.builtin.pause:
+        seconds: 10
 
 - name: Deploy traefik using helm
   hosts: k3s-main-master
   tasks:
-    - ansible.builtin.shell:
-        cmd: curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
     - kubernetes.core.helm_repository:
         name: traefik
         repo_url: "https://helm.traefik.io/traefik"
     - kubernetes.core.helm:
         name: traefik
         chart_ref: traefik/traefik
-        kubeconfig: /etc/rancher/k3s/k3s.yaml
         release_namespace: traefik
         update_repo_cache: true
         values_files:
@@ -96,6 +95,19 @@
         state: present
         kubeconfig: /etc/rancher/k3s/k3s.yaml
         src: /tmp/ansible_files/kubernetes-manifests-devops/traefik-dashboard.yaml
+
+# Deploy the next basic manifests
+- name: Deploy basic manifests 2
+  hosts: k3s-main-master
+  tasks:
+    - kubernetes.core.k8s:
+        state: present
+        kubeconfig: /etc/rancher/k3s/k3s.yaml
+        src: /tmp/ansible_files/kubernetes-manifests-devops/metrics-server-components.yaml
+    - kubernetes.core.k8s:
+        state: present
+        kubeconfig: /etc/rancher/k3s/k3s.yaml
+        src: /tmp/ansible_files/kubernetes-manifests-devops/cluster-autoscaler.yaml
 
 - name: Deploy kubernetes dashboard
   hosts: k3s-main-master

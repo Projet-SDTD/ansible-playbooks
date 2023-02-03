@@ -164,3 +164,41 @@
         state: present
         kubeconfig: /etc/rancher/k3s/k3s.yaml
         src: /tmp/ansible_files/kubernetes-manifests-sre/node-exporter.yml
+
+- name: Deploy application
+  hosts: k3s-main-master
+  tasks:
+    - ansible.builtin.file:
+        path: /tmp/ansible_files/kubernetes-manifests-dev
+        state: directory
+    - copy:
+        src: ../kubernetes-manifests-dev/
+        dest: /tmp/ansible_files/kubernetes-manifests-dev/
+    - kubernetes.core.k8s:
+        state: present
+        kubeconfig: /etc/rancher/k3s/k3s.yaml
+        src: /tmp/ansible_files/kubernetes-manifests-dev/namespace.yaml
+    - kubernetes.core.k8s:
+        state: present
+        kubeconfig: /etc/rancher/k3s/k3s.yaml
+        src: /tmp/ansible_files/kubernetes-manifests-dev/cassandra-statefulset.yaml
+    - kubernetes.core.k8s:
+        state: present
+        kubeconfig: /etc/rancher/k3s/k3s.yaml
+        src: /tmp/ansible_files/kubernetes-manifests-dev/cassandra-creator.yml
+    - kubernetes.core.k8s:
+        state: present
+        kubeconfig: /etc/rancher/k3s/k3s.yaml
+        src: /tmp/ansible_files/kubernetes-manifests-dev/kafka-remote.yml
+    - kubernetes.core.k8s:
+        state: present
+        kubeconfig: /etc/rancher/k3s/k3s.yaml
+        src: /tmp/ansible_files/kubernetes-manifests-dev/keda.yml
+    - kubernetes.core.k8s:
+        state: present
+        kubeconfig: /etc/rancher/k3s/k3s.yaml
+        src: /tmp/ansible_files/kubernetes-manifests-dev/phase1-deployer.yaml
+    - kubernetes.core.k8s:
+        state: present
+        kubeconfig: /etc/rancher/k3s/k3s.yaml
+        src: /tmp/ansible_files/kubernetes-manifests-dev/manifest.yaml
